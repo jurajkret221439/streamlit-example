@@ -4,6 +4,19 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from setup_database import Dish, Ingredient, DishIngredient
 
+# Connect to the database
+engine = create_engine('sqlite:///myrestaurant.db')
+Session = sessionmaker(bind=engine)
+
+# Function to get dish and its ingredients
+def get_dish_with_ingredients(dish_name):
+    session = Session()
+    dish = session.query(Dish).filter_by(name=dish_name).first()
+    dish_ingredients = session.query(DishIngredient).filter_by(dish_id=dish.id).all()
+    ingredients = [{"name": di.ingredient.name, "amount": di.amount} for di in dish_ingredients]
+    return dish, ingredients
+
+
 # Initialize session state
 if 'submitted' not in st.session_state:
     st.session_state['submitted'] = False
@@ -54,6 +67,7 @@ elif st.session_state['submitted']:
         with fryer_left:
             dishes_fryer_cap = ["Taco Beef", "Taco Shrimp", "Frietje Rendang", "Popcorn Shrimp"]
             dishes_fryer_path = ["images/TacoBeef.jpg", "images/Taco Shrimp.jpg", "images/Frietje Rendang.jpg", "images/Popcorn Shrimp.jpg"]
+            dishes_fryer_db = ["taco_beef", "taco_shrimp", "frietje_rendang", "popcorn_shrimp"]
             for i in range(0,4):
                 st.image(f"{dishes_fryer_path[i]}", caption=dishes_fryer_cap[i], use_column_width=True)
                     
