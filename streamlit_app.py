@@ -12,6 +12,8 @@ Session = sessionmaker(bind=engine)
 def get_dish_with_ingredients(dish_name):
     session = Session()
     dish = session.query(Dish).filter_by(name=dish_name).first()
+    if dish is None:
+        return None, []  # Return None and an empty list if dish is not found
     dish_ingredients = session.query(DishIngredient).filter_by(dish_id=dish.id).all()
     ingredients = [{"name": di.ingredient.name, "amount": di.amount} for di in dish_ingredients]
     return dish, ingredients
@@ -25,10 +27,10 @@ if 'reservation_input' not in st.session_state:
     st.session_state['reservation_input'] = ''
 
 # Defines columns 
-left, center, right = st.columns([2,6,2])
+left, center, right = st.columns([3,6,2])
 # Header
 with center:
-    st.title('Restaurant Dashboard')
+    st.title('TSFC First Version')
 
 # Reset view to allow for new input
 def reset_form():
@@ -52,7 +54,7 @@ if not st.session_state['submitted']:
         if st.button('Submit', disabled=is_input_empty):
             st.session_state['submitted'] = True
 
-    # A 'Home' button to reset the form
+   
 elif st.session_state['submitted']:
     with right:
         for _ in range(8):
@@ -64,15 +66,35 @@ elif st.session_state['submitted']:
 
     with Fryer_tab:
         fryer_left, fryer_center, fryer_right = st.columns([2,5,1])
+        dishes_fryer_db = ["Taco Beef", "Taco Shrimp", "Frietje Rendang", "Popcorn Shrimp"]
+        dishes_fryer_path = ["images/TacoBeef.jpg", "images/Taco Shrimp.jpg", "images/Frietje Rendang.jpg", "images/Popcorn Shrimp.jpg"]
+
         with fryer_left:
-            dishes_fryer_cap = ["Taco Beef", "Taco Shrimp", "Frietje Rendang", "Popcorn Shrimp"]
-            dishes_fryer_path = ["images/TacoBeef.jpg", "images/Taco Shrimp.jpg", "images/Frietje Rendang.jpg", "images/Popcorn Shrimp.jpg"]
-            dishes_fryer_db = ["taco_beef", "taco_shrimp", "frietje_rendang", "popcorn_shrimp"]
-            for i in range(0,4):
-                st.image(f"{dishes_fryer_path[i]}", caption=dishes_fryer_cap[i], use_column_width=True)
+            for _ in range(2):
+                st.write("")
+            for i, dish_name in enumerate(dishes_fryer_db):
+                st.image(dishes_fryer_path[i], caption=dish_name, use_column_width=True)
+                for _ in range(3):
+                    st.write("")
+                
                     
-        st.write("Content for the Fryer section")
-        # Include any content or widgets you want in the "Fryer" tab
+        with fryer_center:
+            # Display details of dishes
+            for dish_name in dishes_fryer_db:
+                dish, ingredients = get_dish_with_ingredients(dish_name)
+                
+                if dish:
+                    #st.header(dish_name)
+                    st.subheader("Ingredients")
+                    for ingredient in ingredients:
+                        st.write(f"{ingredient['name']}: {ingredient['amount']} grams")
+                        
+                else:
+                    st.write(f"Details for {dish_name} not found.") 
+                st.markdown("---")
+                for _ in range(9):
+                    st.write("")
+    
 
     with Cold_tab:
         st.write("Content for the other tab")
