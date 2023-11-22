@@ -1,5 +1,7 @@
 altair
 pandas
 streamlit
+sqlite
+setup_database
 sqlalchemy
 numpy
