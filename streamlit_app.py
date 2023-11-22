@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from setup_database import Dish, Ingredient, DishIngredient
 
 # Connect to the database
-engine = create_engine('sqlite:///myrestaurant.db')
+engine = create_engine('sqlite:///tsfc.db')
 Session = sessionmaker(bind=engine)
 
 # Function to get dish and its ingredients
