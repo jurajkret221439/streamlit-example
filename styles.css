@@ -1,0 +1,16 @@
+
+
+/* Center the button in a Streamlit column */
+
+.reportview-container .markdown-text-container {
+    flex: 1;
+    text-align: center;
+}
+.button-container {
+    display: flex;
+    justify-content: center;
+}
+.reportview-container .btn-secondary {
+    margin: 5px;
+}
+ 
