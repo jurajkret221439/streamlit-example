@@ -1,6 +1,8 @@
 import streamlit as st
 from utils import load_css
-
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine
+from setup_database import Dish, Ingredient, DishIngredient
 
 # Initialize session state
 if 'submitted' not in st.session_state:
@@ -10,7 +12,7 @@ if 'reservation_input' not in st.session_state:
     st.session_state['reservation_input'] = ''
 
 # Defines columns 
-left, center, right = st.columns([2,5,2])
+left, center, right = st.columns([2,6,2])
 # Header
 with center:
     st.title('Restaurant Dashboard')
@@ -39,10 +41,34 @@ if not st.session_state['submitted']:
 
     # A 'Home' button to reset the form
 elif st.session_state['submitted']:
-    with center:
-        st.metric(label="Number of Dinner Reservations", value=st.session_state['reservation_input'])
+    with right:
+        for _ in range(8):
+            st.write("")
+        st.metric(label="Dinner Reservations", value=st.session_state['reservation_input'])
+    
+    
+    Fryer_tab, Cold_tab = st.tabs(["Fryer", "Cold"])
+
+    with Fryer_tab:
+        fryer_left, fryer_center, fryer_right = st.columns([2,5,1])
+        with fryer_left:
+            dishes_fryer_cap = ["Taco Beef", "Taco Shrimp", "Frietje Rendang", "Popcorn Shrimp"]
+            dishes_fryer_path = ["images/TacoBeef.jpg", "images/Taco Shrimp.jpg", "images/Frietje Rendang.jpg", "images/Popcorn Shrimp.jpg"]
+            for i in range(0,4):
+                st.image(f"{dishes_fryer_path[i]}", caption=dishes_fryer_cap[i], use_column_width=True)
+                    
+        st.write("Content for the Fryer section")
+        # Include any content or widgets you want in the "Fryer" tab
+
+    with Cold_tab:
+        st.write("Content for the other tab")
+        # Include content for the other tab
+    with left:
+        for _ in range(10):
+            st.write("")
         if st.button('Home'):
             reset_form()
+    
 
 # Footer (Optional)
 st.markdown("---")
