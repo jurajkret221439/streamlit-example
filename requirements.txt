@@ -4,4 +4,5 @@ streamlit
 sqlalchemy
 numpy
 pickle
+sklearn
 sklearn.linear_model

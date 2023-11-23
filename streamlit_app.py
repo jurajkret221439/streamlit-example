@@ -8,17 +8,6 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 
 
-st.markdown(
-    """
-<style>
-[data-testid="stMetricLabel"] {
-    font-size: 100px;
-}
-</style>
-""",
-    unsafe_allow_html=True,
-)
-
 def load_model(model_path):
     with open(model_path, "rb") as file:
         return pickle.load(file)
@@ -50,10 +39,10 @@ if 'reservation_input' not in st.session_state:
     st.session_state['reservation_input'] = ''
 
 # Defines columns 
-left, center, right = st.columns([3,6,2])
+left, center, right = st.columns([4,6,3])
 # Header
 with center:
-    st.title('TSFC First Version')
+    st.title('TSFC Version 1')
 
 # Reset view to allow for new input
 def reset_form():
