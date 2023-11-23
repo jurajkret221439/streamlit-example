@@ -66,33 +66,34 @@ elif st.session_state['submitted']:
 
     with Fryer_tab:
         fryer_left, fryer_center, fryer_right = st.columns([2,5,1])
-        dishes_fryer_db = ["Taco Beef", "Taco Shrimp", "Frietje Rendang", "Popcorn Shrimp",]
+        dishes_fryer_db = ["Taco Beef", "Taco Shrimp", "Frietje Rendang", "Popcorn Shrimp"]
         dishes_fryer_path = ["images/TacoBeef.jpg", "images/Taco Shrimp.jpg", "images/Frietje Rendang.jpg", "images/Popcorn Shrimp.jpg"]
 
         with fryer_left:
-            spaces_after_dish = [6, 4 , 6]  
             for _ in range(2):
                 st.write("")
             for i, dish_name in enumerate(dishes_fryer_db):
                 st.image(dishes_fryer_path[i], caption=dish_name, use_column_width=True)
-                for _ in range(spaces_after_dish[i -1]):
+                for _ in range(3):
                     st.write("")
                 
                     
         with fryer_center:
-            # Display details of dishe  s
+            # Display details of dishes
             for dish_name in dishes_fryer_db:
                 dish, ingredients = get_dish_with_ingredients(dish_name)
+                
                 if dish:
                     st.subheader("Ingredients")
                     for ingredient in ingredients:
-                        st.write(f"{ingredient['name']}: {ingredient['amount']} grams") 
+                        st.write(f"{ingredient['name']}: {ingredient['amount']} grams")
+                        
                 else:
                     st.write(f"Details for {dish_name} not found.") 
                 st.markdown("---")
-                #for _ in range(9):
-                 #     st.write("")
-        
+                for _ in range(9):
+                    st.write("")
+    
 
     with Cold_tab:
         st.write("Content for the other tab")
