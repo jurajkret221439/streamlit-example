@@ -84,7 +84,6 @@ elif st.session_state['submitted']:
                 dish, ingredients = get_dish_with_ingredients(dish_name)
                 
                 if dish:
-                    #st.header(dish_name)
                     st.subheader("Ingredients")
                     for ingredient in ingredients:
                         st.write(f"{ingredient['name']}: {ingredient['amount']} grams")
