@@ -3,3 +3,5 @@ pandas
 streamlit
 sqlalchemy
 numpy
+pickle
+sklearn.linear_model
