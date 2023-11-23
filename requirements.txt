@@ -3,6 +3,6 @@ pandas
 streamlit
 sqlalchemy
 numpy
-pickle
-sklearn
-sklearn.linear_model
+jsonpickle
+scikit-learn
+
