@@ -8,11 +8,14 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 
 
+def navigate_to(dish_name):
+    st.session_state['current_page'] = dish_name
+
 def load_model(model_path):
     with open(model_path, "rb") as file:
         return pickle.load(file)
     
-model_tacobeef =  load_model("models/TacoBeefModel1.pkl")
+model_tacobeef =  load_model("models/TacoBeefModel2.pkl")
 model_frietje_rendang = load_model("models/FrietjeRendangModel1.pkl")
 model_tacoshrimp = load_model("models/TacoShrimpModel1.pkl")
 model_popcorn_shrimp = load_model("models/PopcornShrimpModel1.pkl")
@@ -25,11 +28,11 @@ def get_dish_with_ingredients(dish_name):
     session = Session()
     dish = session.query(Dish).filter_by(name=dish_name).first()
     if dish is None:
-        return None, []  # Return None and an empty list if dish is not found
-    dish_ingredients = session.query(DishIngredient).filter_by(dish_id=dish.id).all()
-    ingredients = [{"name": di.ingredient.name, "amount": di.amount} for di in dish_ingredients]
-    return dish, ingredients
+        return None, []  # Return None and an empty list if the dish is not found
 
+    dish_ingredients = session.query(DishIngredient, Ingredient).join(Ingredient).filter(DishIngredient.dish_id == dish.id).all()
+    ingredients = [{"name": ingredient.name, "amount": dish_ingredient.amount, "amount_type": ingredient.amount_type, "storage_type": ingredient.storage_type} for dish_ingredient, ingredient in dish_ingredients]
+    return dish, ingredients
 
 # Initialize session state
 if 'submitted' not in st.session_state:
@@ -79,49 +82,59 @@ elif st.session_state['submitted']:
         st.metric(label="Dinner Reservations", value=int(st.session_state['reservation_input']))
     
     
-    Fryer_tab, Cold_tab = st.tabs(["Fryer", "Cold"])
+    Fryer_tab, Cold_tab, Menu_tab = st.tabs(["Fryer", "Cold", "Menu"])
 
     with Fryer_tab:
         fryer_left, fryer_center1, fryer_center2, fryer_right = st.columns([2,3,3,1])
         dishes_fryer_db = ["Taco Beef", "Taco Shrimp", "Frietje Rendang", "Popcorn Shrimp",]
         dishes_fryer_path = ["images/TacoBeef.jpg", "images/Taco Shrimp.jpg", "images/Frietje Rendang.jpg", "images/Popcorn Shrimp.jpg"]
 
+        estimated_sales = []
         with fryer_left:
             spaces_after_dish = [7, 8, 5, 3]  
-            for _ in range(3):
+            for _ in range(2):
                 st.write("")
             for i, dish_name in enumerate(dishes_fryer_db):
-                st.image(dishes_fryer_path[i], caption=dish_name, use_column_width=True)
+                st.image(dishes_fryer_path[i], caption=dish_name, use_column_width=True)              
                 for _ in range(spaces_after_dish[i]):
                     st.write("")
                 
-                    
-        with fryer_center1:
-            # Display details of dishe  s
-            for dish_name in dishes_fryer_db:
-                dish, ingredients = get_dish_with_ingredients(dish_name)
-                if dish:
-                    st.subheader("Ingredients")
-                    for ingredient in ingredients:
-                        st.write(f"{ingredient['name']}: {ingredient['amount']} grams") 
-                else:
-                    st.write(f"Details for {dish_name} not found.") 
-                st.markdown("---")
-
 
         with fryer_center2:
+            estimated_sales.clear()
             spaces_after_dish = [9, 11, 9, 0]
            
             model_list =[model_tacobeef, model_tacoshrimp, model_frietje_rendang, model_popcorn_shrimp]
-            for i in range(len(model_list)):
+            for i, model in enumerate(model_list):
                 
                 st.subheader("Est. Sales")
                 if "reservation_input" in st.session_state and st.session_state["reservation_input"]:
                     input_data = np.array([[st.session_state['reservation_input']]])
                     prediction = model_list[i].predict(input_data)
-                    st.metric(label= "Metric",label_visibility="hidden",value =f"{int(prediction[0])}")
+                    sales_prediction = int(prediction[0])
+                    estimated_sales.append(sales_prediction)
+                    st.metric(label= "Metric",label_visibility="hidden",value =f"{sales_prediction}")
                 for _ in range(spaces_after_dish[i]):
                     st.write(" ")
+
+        with fryer_center1:
+            # Display details of dishe  s
+            for i, dish_name in enumerate(dishes_fryer_db):
+                dish, ingredients = get_dish_with_ingredients(dish_name)
+                if dish and estimated_sales[i] > 0:
+                    st.subheader("Ingredients")
+                    multiplier = estimated_sales[i]
+
+                    for ingredient in ingredients:
+                        adjusted_amount = ingredient['amount'] * multiplier
+                        st.write(f"{ingredient['name']}: {adjusted_amount} {ingredient['amount_type']} (ADD AMOUNT {ingredient['storage_type']})")
+                        #st.write(f"{ingredient['name']}: {ingredient['amount']} grams") "
+                else:
+                    st.write(f"Details for {dish_name} not found.") 
+                st.markdown("---")
+
+
+       
 
 
 
@@ -134,6 +147,19 @@ elif st.session_state['submitted']:
             if st.button('Home'):
                 reset_form()
     
+
+
+    with Menu_tab:
+        st.header("Taco Beef")
+        dish, ingredients = get_dish_with_ingredients("Taco Beef")
+        if dish:
+            st.subheader("Ingredients")
+            for ingredient in ingredients:
+                st.write(f"{ingredient['name']}: {ingredient['amount']}")
+        else:
+            st.write("Taco Beef details not found in the database.")
+
+        
 
 # Footer (Optional)
 st.markdown("---")

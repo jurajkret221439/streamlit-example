@@ -22,6 +22,8 @@ class Ingredient(Base):
     __tablename__ = 'ingredients'
     id = Column(Integer, primary_key=True)
     name = Column(String,unique=True) 
+    amount_type = Column(String)
+    storage_type = Column(String)
 
 # DishIngredient model
 class DishIngredient(Base):
@@ -60,6 +62,7 @@ def drop_all_tables_except_waste():
         Dish.__table__.drop(engine)
         Ingredient.__table__.drop(engine)
         DishIngredient.__table__.drop(engine)
+
         # Any other tables you have, except for 'Waste'
 
         session.commit()
@@ -75,6 +78,7 @@ def create_tables():
     Base.metadata.create_all(engine)
     print("CREATED TABLES")
 create_tables()
+
 '''
 def create_specific_tables():
     try:
@@ -111,10 +115,10 @@ def add_dish(name):
         session.close()
 
 # Function to add an ingredient
-def add_ingredient(name):
+def add_ingredient(name, amount_type, storage_type):
     try:
         session = Session()
-        ingredient = Ingredient(name=name)
+        ingredient = Ingredient(name=name, amount_type=amount_type, storage_type=storage_type)
         session.add(ingredient)
         session.commit()
         print(f"Ingredient added: {ingredient.name}")
@@ -153,23 +157,23 @@ def add_waste(dish_id, ingredient_id, amount, waste_type, date):
 
     # Add Taco Beef and its ingredients
 taco_beef = add_dish("Taco Beef")
-birria = add_ingredient("Birria")
-avo_smash = add_ingredient("Avo Smash")
-onion_coriander = add_ingredient("Onion Coriander")
-mojo_rojo = add_ingredient("Mojo Rojo")
+birria = add_ingredient("Birria", amount_type="grams",storage_type='Vaccum bags')
+avo_smash = add_ingredient("Avo Smash", amount_type="grams", storage_type="Hoedje")
+onion_coriander = add_ingredient("Onion Coriander", amount_type="grams", storage_type="Hoedje")
+mojo_rojo = add_ingredient("Mojo Rojo", amount_type="grams", storage_type ="Bottle")
 
-add_dish_ingredient(taco_beef, birria, 80)
+add_dish_ingredient(taco_beef, birria, 85)
 add_dish_ingredient(taco_beef, avo_smash, 25)
 add_dish_ingredient(taco_beef, onion_coriander, 25)
-add_dish_ingredient(taco_beef, mojo_rojo, 12)
+add_dish_ingredient(taco_beef, mojo_rojo, 15)
 
 
     # Add Frietje Rendang and its ingredients
 frietje_rendang = add_dish("Frietje Rendang")
-rendang = add_ingredient("Rendang")
-fries = add_ingredient("Fries")
-danish_cheese = add_ingredient("Danish Cheese")
-zz_kk = add_ingredient("SS Cucumber") 
+rendang = add_ingredient("Rendang", amount_type="grams",storage_type='Vaccum bags')
+fries = add_ingredient("Fries", amount_type="grams",storage_type='Fries Packaging')
+danish_cheese = add_ingredient("Danish Cheese", amount_type="grams",storage_type='Cheese Packaging')
+zz_kk = add_ingredient("SS Cucumber", amount_type="grams",storage_type='Hoedje') 
 
 add_dish_ingredient(frietje_rendang, rendang, 120)
 add_dish_ingredient(frietje_rendang, fries, 80)
@@ -179,11 +183,11 @@ add_dish_ingredient(frietje_rendang, zz_kk, 25)
 
     # Add Taco Shrimp and its ingredients
 taco_shrimp = add_dish("Taco Shrimp")
-shrimp = add_ingredient("Shrimp")
-salsa_verde = add_ingredient("Salsa Verde")
-pico_de_gallo = add_ingredient("Pico de Gallo")
-iceberg = add_ingredient("Iceberg Lettuce")
-tempura = add_ingredient("Tempura Batter")
+shrimp = add_ingredient("Shrimp", amount_type="pieces",storage_type='Shrimp Packaging')
+salsa_verde = add_ingredient("Salsa Verde", amount_type="grams",storage_type='Bottle')
+pico_de_gallo = add_ingredient("Pico de Gallo", amount_type="grams",storage_type='Hoedje')
+iceberg = add_ingredient("Iceberg Lettuce", amount_type="grams",storage_type='Hoedje')
+tempura = add_ingredient("Tempura Batter",amount_type="grams",storage_type='Tempura Packaging')
 
 add_dish_ingredient(taco_shrimp, shrimp, 2) # fix it to be pieces
 add_dish_ingredient(taco_shrimp, salsa_verde, 30)
@@ -194,7 +198,7 @@ add_dish_ingredient(taco_shrimp, tempura, 24) # not mixed
 
     # Add Popcorn Shrimp and its ingredients
 popcorn_shrimp = add_dish("Popcorn Shrimp")
-yuzu_mayo = add_ingredient("Yuzu Mayonaise")
+yuzu_mayo = add_ingredient("Yuzu Mayonaise", amount_type="grams",storage_type='Bottle')
 
 add_dish_ingredient(popcorn_shrimp, shrimp, 5)
 add_dish_ingredient(popcorn_shrimp, yuzu_mayo, 60)
