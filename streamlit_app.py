@@ -2,11 +2,11 @@ import streamlit as st
 from utils import load_css
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from setup_database import Dish, Ingredient, DishIngredient
+from setup_database import Dish, Ingredient, DishIngredient,  Waste
 import pickle
 from sklearn.linear_model import LinearRegression
 import numpy as np
-
+from datetime import datetime, date
 
 def navigate_to(dish_name):
     st.session_state['current_page'] = dish_name
@@ -33,6 +33,43 @@ def get_dish_with_ingredients(dish_name):
     dish_ingredients = session.query(DishIngredient, Ingredient).join(Ingredient).filter(DishIngredient.dish_id == dish.id).all()
     ingredients = [{"name": ingredient.name, "amount": dish_ingredient.amount, "amount_type": ingredient.amount_type, "storage_type": ingredient.storage_type} for dish_ingredient, ingredient in dish_ingredients]
     return dish, ingredients
+
+# Function to fetch dishes
+def get_dishes():
+    session = Session()
+    dishes = session.query(Dish).all()
+    session.close()
+    return dishes
+
+# Function to fetch ingredients based on selected dish
+def get_ingredients_for_dish(dish_id):
+    session = Session()
+    dish_ingredients = session.query(DishIngredient).filter(DishIngredient.dish_id == dish_id).all()
+    ingredients = [session.query(Ingredient).get(di.ingredient_id) for di in dish_ingredients]
+    session.close()
+    return ingredients
+
+# Function to add waste data to the database
+def add_waste(dish_id, ingredient_id, amount, date):
+    session = Session()
+    try:
+        dish = session.query(Dish).get(dish_id)
+        # Fetch the waste_type from the Ingredient model
+        ingredient = session.query(Ingredient).get(ingredient_id)
+        if ingredient is None:
+            raise ValueError(f"No ingredient found with ID {ingredient_id}")
+        current_time = datetime.now().time()
+        waste_type = ingredient.waste_type
+
+        waste_data = Waste(dish_id=dish_id, dish_name=dish.name,ingredient_id=ingredient_id, ingredient_name=ingredient.name,amount=amount, waste_type=waste_type, date=date, entry_time=current_time)
+        session.add(waste_data)
+        session.commit()
+        return "Waste data submitted successfully."
+    except Exception as e:
+        session.rollback()  # Rollback the changes on error
+        return f"Error adding waste data: {e}"
+    finally:
+        session.close()
 
 # Initialize session state
 if 'submitted' not in st.session_state:
@@ -82,7 +119,7 @@ elif st.session_state['submitted']:
         st.metric(label="Dinner Reservations", value=int(st.session_state['reservation_input']))
     
     
-    Fryer_tab, Cold_tab, Menu_tab = st.tabs(["Fryer", "Cold", "Menu"])
+    Fryer_tab, Cold_tab, Waste_tab = st.tabs(["Fryer", "Cold", "Waste"])
 
     with Fryer_tab:
         fryer_left, fryer_center1, fryer_center2, fryer_right = st.columns([2,3,3,1])
@@ -127,15 +164,14 @@ elif st.session_state['submitted']:
 
                     for ingredient in ingredients:
                         adjusted_amount = ingredient['amount'] * multiplier
-                        st.write(f"{ingredient['name']}: {adjusted_amount} {ingredient['amount_type']} (ADD AMOUNT {ingredient['storage_type']})")
-                        #st.write(f"{ingredient['name']}: {ingredient['amount']} grams") "
+                        st.write(f"{ingredient['name']}: {adjusted_amount} {ingredient['amount_type']} ")
+                        #st.write(f"{ingredient['name']}: {ingredient['amount']} grams") (ADD AMOUNT {ingredient['storage_type']})"
                 else:
                     st.write(f"Details for {dish_name} not found.") 
                 st.markdown("---")
 
-
-       
-
+    
+          
 
 
     with Cold_tab:
@@ -149,16 +185,42 @@ elif st.session_state['submitted']:
     
 
 
-    with Menu_tab:
-        st.header("Taco Beef")
-        dish, ingredients = get_dish_with_ingredients("Taco Beef")
-        if dish:
-            st.subheader("Ingredients")
-            for ingredient in ingredients:
-                st.write(f"{ingredient['name']}: {ingredient['amount']}")
-        else:
-            st.write("Taco Beef details not found in the database.")
+    with Waste_tab:
+        st.header("Waste")
+        # Dropdown for dish selection
+        dishes = get_dishes()
+        dish_options = {d.name: d.id for d in dishes}
+        selected_dish_name = st.selectbox("Select Dish", options=list(dish_options.keys()))
+        
+        # Update session state for selected dish
+        if 'selected_dish_id' not in st.session_state or st.session_state.selected_dish_name != selected_dish_name:
+            st.session_state.selected_dish_id = dish_options[selected_dish_name]
+            st.session_state.selected_dish_name = selected_dish_name
+        
+        # Dropdown for ingredient selection based on selected dish
+        ingredients = get_ingredients_for_dish(st.session_state.selected_dish_id)
+        ingredient_options = [i.name for i in ingredients]
+        selected_ingredient = st.selectbox("Select Ingredient", options=ingredient_options)
 
+        
+        # Inputs for amount, type of waste, and date
+        amount = st.number_input("Amount of Waste in Grams", min_value=0)
+        waste_date = date.today()
+
+        if st.button('Submit Waste Data'):
+            # Fetch the selected dish and ingredient IDs
+            selected_dish_id = dish_options[selected_dish_name]
+            selected_ingredient_id = next(i.id for i in ingredients if i.name == selected_ingredient)
+
+            if selected_ingredient_id is not None:
+        # Call the add_waste function and handle the response
+                response = add_waste(dish_id=selected_dish_id, ingredient_id=selected_ingredient_id, amount=amount, date=waste_date)
+                if response.startswith("Error"):
+                    st.error(response)
+                else:
+                    st.success(response)
+            else:
+                st.error("Please select a valid ingredient.")
         
 
 # Footer (Optional)

@@ -110,3 +110,20 @@ elif st.session_state['submitted']:
 # Footer (Optional)
 st.markdown("---")
 st.markdown("© 2023 Restaurant Dashboard")
+
+
+
+
+
+
+
+
+with Menu_tab:
+        st.header("Taco Beef")
+        dish, ingredients = get_dish_with_ingredients("Taco Beef")
+        if dish:
+            st.subheader("Ingredients")
+            for ingredient in ingredients:
+                st.write(f"{ingredient['name']}: {ingredient['amount']}")
+        else:
+            st.write("Taco Beef details not found in the database.")
