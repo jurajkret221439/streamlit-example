@@ -2,11 +2,14 @@ import streamlit as st
 from utils import load_css
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from setup_database import Dish, Ingredient, DishIngredient,  Waste
+from setup_database_azure import SessionLocal, Dish, Ingredient, DishIngredient,  Waste
 import pickle
 from sklearn.linear_model import LinearRegression
 import numpy as np
 from datetime import datetime, date
+import os
+import pyodbc
+from dotenv import load_dotenv
 
 def navigate_to(dish_name):
     st.session_state['current_page'] = dish_name
@@ -14,62 +17,69 @@ def navigate_to(dish_name):
 def load_model(model_path):
     with open(model_path, "rb") as file:
         return pickle.load(file)
-    
+
+# Load Models    
 model_tacobeef =  load_model("models/TacoBeefModel2.pkl")
 model_frietje_rendang = load_model("models/FrietjeRendangModel1.pkl")
 model_tacoshrimp = load_model("models/TacoShrimpModel1.pkl")
 model_popcorn_shrimp = load_model("models/PopcornShrimpModel1.pkl")
-# Connect to the database
-engine = create_engine('sqlite:///tsfc.db')
-Session = sessionmaker(bind=engine)
+
+load_dotenv()  # This loads the variables from .env into the environment
+
+server = os.getenv('DB_SERVER1')
+database = os.getenv('DB_DATABASE1')
+username = os.getenv('DB_USERNAME1')
+password = os.getenv('DB_PASSWORD1')
+driver = '{ODBC Driver 18 for SQL Server}'
+# Connection string
+connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+18+for+SQL+Server"
+# Database setup
+engine = create_engine(connection_string)
 
 # Function to get dish and its ingredients
 def get_dish_with_ingredients(dish_name):
-    session = Session()
-    dish = session.query(Dish).filter_by(name=dish_name).first()
-    if dish is None:
-        return None, []  # Return None and an empty list if the dish is not found
+    with SessionLocal() as session:
+        dish = session.query(Dish).filter_by(name=dish_name).first()
+        if dish is None:
+            return None, []  # Return None and an empty list if the dish is not found
 
-    dish_ingredients = session.query(DishIngredient, Ingredient).join(Ingredient).filter(DishIngredient.dish_id == dish.id).all()
-    ingredients = [{"name": ingredient.name, "amount": dish_ingredient.amount, "amount_type": ingredient.amount_type, "storage_type": ingredient.storage_type} for dish_ingredient, ingredient in dish_ingredients]
-    return dish, ingredients
+        dish_ingredients = session.query(DishIngredient, Ingredient).join(Ingredient).filter(DishIngredient.dish_id == dish.id).all()
+        ingredients = [{"name": ingredient.name, "amount": dish_ingredient.amount, "amount_type": ingredient.amount_type, "storage_type": ingredient.storage_type} for dish_ingredient, ingredient in dish_ingredients]
+        return dish, ingredients
 
 # Function to fetch dishes
 def get_dishes():
-    session = Session()
-    dishes = session.query(Dish).all()
-    session.close()
-    return dishes
+    with SessionLocal() as session:
+        dishes = session.query(Dish).all()
+        return dishes
 
 # Function to fetch ingredients based on selected dish
 def get_ingredients_for_dish(dish_id):
-    session = Session()
-    dish_ingredients = session.query(DishIngredient).filter(DishIngredient.dish_id == dish_id).all()
-    ingredients = [session.query(Ingredient).get(di.ingredient_id) for di in dish_ingredients]
-    session.close()
-    return ingredients
+    with SessionLocal() as session:
+        dish_ingredients = session.query(DishIngredient).filter(DishIngredient.dish_id == dish_id).all()
+        ingredients = [session.query(Ingredient).get(di.ingredient_id) for di in dish_ingredients]
+        # No need to close the session explicitly when using 'with'
+        return ingredients
 
 # Function to add waste data to the database
 def add_waste(dish_id, ingredient_id, amount, date):
-    session = Session()
-    try:
-        dish = session.query(Dish).get(dish_id)
-        # Fetch the waste_type from the Ingredient model
-        ingredient = session.query(Ingredient).get(ingredient_id)
-        if ingredient is None:
-            raise ValueError(f"No ingredient found with ID {ingredient_id}")
-        current_time = datetime.now().time()
-        waste_type = ingredient.waste_type
+    with SessionLocal() as session:
+        try:
+            dish = session.query(Dish).get(dish_id)
+            ingredient = session.query(Ingredient).get(ingredient_id)
+            if ingredient is None:
+                raise ValueError(f"No ingredient found with ID {ingredient_id}")
+            current_time = datetime.now().time()
+            waste_type = ingredient.waste_type
 
-        waste_data = Waste(dish_id=dish_id, dish_name=dish.name,ingredient_id=ingredient_id, ingredient_name=ingredient.name,amount=amount, waste_type=waste_type, date=date, entry_time=current_time)
-        session.add(waste_data)
-        session.commit()
-        return "Waste data submitted successfully."
-    except Exception as e:
-        session.rollback()  # Rollback the changes on error
-        return f"Error adding waste data: {e}"
-    finally:
-        session.close()
+            waste_data = Waste(dish_id=dish_id, dish_name=dish.name, ingredient_id=ingredient_id, ingredient_name=ingredient.name, amount=amount, waste_type=waste_type, date=date, entry_time=current_time)
+            session.add(waste_data)
+            session.commit()
+            return "Waste data submitted successfully."
+        except Exception as e:
+            session.rollback()  # Rollback the changes on error
+            return f"Error adding waste data: {e}"
+       
 
 # Initialize session state
 if 'submitted' not in st.session_state:

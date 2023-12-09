@@ -1,12 +1,38 @@
 from sqlalchemy import create_engine, Float, Date, Column, Integer, String, ForeignKey, Table, Time
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.engine import url
 from datetime import datetime
-# Database setup
-engine = create_engine(
-    'sqlite:///tsfc.db', 
-    connect_args={'check_same_thread': False}
+import pyodbc
+import os
+import urllib
+
+#server = os.environ.get('DB_SERVER')
+#database = os.environ.get('DB_DATABASE')
+#username = os.environ.get('DB_USERNAME')
+#password = os.environ.get('DB_PASSWORD')
+#driver = '{ODBC Driver 18 for SQL Server}'
+
+params = urllib.parse.quote_plus(
+    "DRIVER={ODBC Driver 18 for SQL Server};"
+    f"SERVER={os.environ.get('DB_SERVER')};"
+    f"DATABASE={os.environ.get('DB_DATABASE')};"
+    f"UID={os.environ.get('DB_USERNAME')};"
+    f"PWD={os.environ.get('DB_PASSWORD')}"
 )
+'''
+# Database setup
+connection_string = url.URL.create(
+    "mssql+pyodbc",
+    username=username,
+    password=password,
+    host=server,
+    database=database,
+    query={"driver": "ODBC Driver 18 for SQL Server"},
+)
+'''
+engine = create_engine("mssql+pyodbc:///?odbc_connect=%s" % params)
+
 Session = sessionmaker(bind=engine)
 Base = declarative_base()
 
