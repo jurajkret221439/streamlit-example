@@ -6,7 +6,7 @@ numpy
 jsonpickle
 scikit-learn
 pyodbc
-dotenv
+python-dotenv
 
 
 
