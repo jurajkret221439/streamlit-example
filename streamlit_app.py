@@ -10,6 +10,11 @@ from datetime import datetime, date
 import os
 import pyodbc
 from dotenv import load_dotenv
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+
 
 def navigate_to(dish_name):
     st.session_state['current_page'] = dish_name
@@ -77,6 +82,7 @@ def add_waste(dish_id, ingredient_id, amount, date):
             session.commit()
             return "Waste data submitted successfully."
         except Exception as e:
+            logging.error(f"Error: {e}")
             session.rollback()  # Rollback the changes on error
             return f"Error adding waste data: {e}"
        
@@ -119,6 +125,7 @@ if not st.session_state['submitted']:
                 st.session_state['reservation_input'] = float(reservation_input)
             except ValueError:
                 st.error("Please enter a valid number for reservations.")
+                logging.error("Please enter a valid number for reservations.")
             st.session_state["submitted"] = True
 
    
