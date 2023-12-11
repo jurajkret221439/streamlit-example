@@ -31,15 +31,20 @@ model_popcorn_shrimp = load_model("models/PopcornShrimpModel1.pkl")
 
 load_dotenv()  # This loads the variables from .env into the environment
 
-server = st.secrets["server"]
-database = st.secrets["database"]
-username = st.secrets["username"]
-password = st.secrets["password"]
-driver = '{ODBC Driver 17 for SQL Server}'
-# Connection string
-connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+18+for+SQL+Server"
-# Database setup
-engine = create_engine(connection_string)
+@st.cache_resource
+def init_connection():
+    return pyodbc.connect(
+        "DRIVER={ODBC Driver 17 for SQL Server};SERVER="
+        + st.secrets["server"]
+        + ";DATABASE="
+        + st.secrets["database"]
+        + ";UID="
+        + st.secrets["username"]
+        + ";PWD="
+        + st.secrets["password"]
+    )
+
+conn = init_connection()
 
 # Function to get dish and its ingredients
 def get_dish_with_ingredients(dish_name):
