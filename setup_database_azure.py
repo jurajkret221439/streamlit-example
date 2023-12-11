@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
+import pyodbc
 
 server = 'thestreetfoodclub.database.windows.net'  # Your server name
 database = 'TSFC'  # Your database name

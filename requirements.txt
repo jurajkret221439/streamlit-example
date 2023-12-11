@@ -5,6 +5,7 @@ sqlalchemy
 numpy
 jsonpickle
 scikit-learn
+pyodbc
 
 
 
