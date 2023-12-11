@@ -5,7 +5,6 @@ sqlalchemy
 numpy
 jsonpickle
 scikit-learn
-os
 urllib
 dotenv
 
