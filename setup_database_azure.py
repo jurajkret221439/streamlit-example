@@ -2,7 +2,6 @@ from sqlalchemy import create_engine, Float, Date, Column, Integer, String, Fore
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
-import pyodbc
 import os
 
 server = 'thestreetfoodclub.database.windows.net'  # Your server name
