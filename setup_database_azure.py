@@ -13,7 +13,7 @@ password = st.secrets["password"]
 driver = '{ODBC Driver 17 for SQL Server}'
 
 # Connection string
-connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+18+for+SQL+Server"
+connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+17+for+SQL+Server"
 
 
 
