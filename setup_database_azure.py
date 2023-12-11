@@ -4,11 +4,13 @@ from sqlalchemy.orm import sessionmaker, relationship
 from datetime import datetime
 import os
 import pyodbc
+import streamlit as st
 
-server = 'thestreetfoodclub.database.windows.net'  # Your server name
-database = 'TSFC'  # Your database name
-username = 'jurajkret'  # Your username
-password = 'Smetisko123'  # Your password
+server = st.secrets["server"]
+database = st.secrets["database"]
+username = st.secrets["username"]
+password = st.secrets["password"]
+driver = '{ODBC Driver 17 for SQL Server}'
 
 # Connection string
 connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+18+for+SQL+Server"

@@ -31,11 +31,11 @@ model_popcorn_shrimp = load_model("models/PopcornShrimpModel1.pkl")
 
 load_dotenv()  # This loads the variables from .env into the environment
 
-server = os.getenv('DB_SERVER1')
-database = os.getenv('DB_DATABASE1')
-username = os.getenv('DB_USERNAME1')
-password = os.getenv('DB_PASSWORD1')
-driver = '{ODBC Driver 18 for SQL Server}'
+server = st.secrets["server"]
+database = st.secrets["database"]
+username = st.secrets["username"]
+password = st.secrets["password"]
+driver = '{ODBC Driver 17 for SQL Server}'
 # Connection string
 connection_string = f"mssql+pyodbc://{username}:{password}@{server}/{database}?driver=ODBC+Driver+18+for+SQL+Server"
 # Database setup
