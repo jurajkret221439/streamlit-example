@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression
 import numpy as np
 from datetime import datetime, date
 import os
-import pyodbc
+#import pyodbc
 from dotenv import load_dotenv
 import logging
 
