@@ -67,6 +67,20 @@ def add_base_waste_entries_for_all_dishes(name):
     
     return success_count, error_count  
 
+def calculate_average_waste(dish_id, ingredient_id):
+    with SessionLocal() as session:
+        # Query to find all waste entries for the specified dish and ingredient
+        waste_data = session.query(Waste).filter_by(dish_id=dish_id, ingredient_id=ingredient_id).all()
+        
+        # Calculate the average if waste_data is not empty
+        if waste_data:
+            total_waste = sum(entry.amount for entry in waste_data)
+            average_waste = total_waste / len(waste_data)
+            return average_waste
+        else:
+            return None  # Return None or 0 if there are no waste entries
+
+
 # Example dictionary for base waste amounts
 base_waste_amounts = {
     'Birria': 100.0,

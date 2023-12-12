@@ -11,7 +11,7 @@ import os
 import pyodbc
 from dotenv import load_dotenv
 import logging
-from functions import get_dish_with_ingredients, get_dishes, get_ingredients_for_dish, add_waste, add_base_waste_entries_for_all_dishes
+from functions import get_dish_with_ingredients, get_dishes, get_ingredients_for_dish, add_waste, add_base_waste_entries_for_all_dishes, calculate_average_waste
 
 logging.basicConfig(level=logging.INFO)
 
@@ -165,57 +165,71 @@ elif st.session_state['submitted']:
 
 
     with Waste_tab:
-        st.header("Waste")
-        name = st.text_input("Name", value="", placeholder="Enter name here")
-        # Dropdown for dish selection
-        dishes = get_dishes()
-        dish_options = {d.name: d.id for d in dishes}
-        selected_dish_name = st.selectbox("Select Dish", options=list(dish_options.keys()))
-        
-        # Update session state for selected dish
-        if 'selected_dish_id' not in st.session_state or st.session_state.selected_dish_name != selected_dish_name:
-            st.session_state.selected_dish_id = dish_options[selected_dish_name]
-            st.session_state.selected_dish_name = selected_dish_name
-        
-        # Dropdown for ingredient selection based on selected dish
-        ingredients = get_ingredients_for_dish(st.session_state.selected_dish_id)
-        ingredient_options = [i.name for i in ingredients]
-        selected_ingredient = st.selectbox("Select Ingredient", options=ingredient_options)
+        st.markdown("""
+        <h1 style="padding-left: 90px;">Waste</h1>
+    """, unsafe_allow_html=True)
+        Waste_left, Padding, Waste_right = st.columns([3,1,3])
+        with Waste_left:
+            name = st.text_input("Name", value="", placeholder="Enter name here")
+            # Dropdown for dish selection
+            dishes = get_dishes()
+            dish_options = {d.name: d.id for d in dishes}
+            selected_dish_name = st.selectbox("Select Dish", options=list(dish_options.keys()))
+            
+            # Update session state for selected dish
+            if 'selected_dish_id' not in st.session_state or st.session_state.selected_dish_name != selected_dish_name:
+                st.session_state.selected_dish_id = dish_options[selected_dish_name]
+                st.session_state.selected_dish_name = selected_dish_name
+            
+            # Dropdown for ingredient selection based on selected dish
+            # Fetch the selected dish and ingredient IDs
+            ingredients = get_ingredients_for_dish(st.session_state.selected_dish_id)
+            ingredient_options = [i.name for i in ingredients]
+            selected_ingredient = st.selectbox("Select Ingredient", options=ingredient_options)
+            selected_ingredient_id = next(i.id for i in ingredients if i.name == selected_ingredient)
+            selected_dish_id = dish_options[selected_dish_name]
+            # Inputs for amount, type of waste, and date
+            amount = st.number_input("Amount of Waste in Grams", min_value=0)
+            waste_date = date.today()
 
-        
-        # Inputs for amount, type of waste, and date
-        amount = st.number_input("Amount of Waste in Grams", min_value=0)
-        waste_date = date.today()
-
-        if st.button('Submit Waste Data'):
-            if name.strip():
-                # Fetch the selected dish and ingredient IDs
-                selected_dish_id = dish_options[selected_dish_name]
-                selected_ingredient_id = next(i.id for i in ingredients if i.name == selected_ingredient)
-
-                if selected_ingredient_id is not None:
-            # Call the add_waste function and handle the response
-                    response = add_waste(dish_id=selected_dish_id, ingredient_id=selected_ingredient_id, amount=amount, date=waste_date, name=name)
-                    if response.startswith("Error"):
-                        st.error(response)
+            if st.button('Submit Waste Data'):
+                if name.strip():
+                    if selected_ingredient_id is not None:
+                        # Call the add_waste function and handle the response
+                        response = add_waste(dish_id=selected_dish_id, ingredient_id=selected_ingredient_id, amount=amount, date=waste_date, name=name)
+                        if response.startswith("Error"):
+                            st.error(response)
+                        else:
+                            st.success(response)
                     else:
-                        st.success(response)
+                        st.error("Please select a valid ingredient.")
                 else:
-                    st.error("Please select a valid ingredient.")
-            else:
-                # If the name is empty, display an error message
-                st.error("Please enter a name before submitting waste data.") 
+                    # If the name is empty, display an error message
+                    st.error("Please enter a name before submitting waste data.") 
             # Button to add zero waste for all ingredients of all dishes
-        if st.button('Add Zero Waste for All Ingredients'):
-            if name.strip():
-                successes, errors = add_base_waste_entries_for_all_dishes(name)
-                if errors == 0:
-                    st.success(f"All zero waste entries added successfully for {successes} ingredients.")
+            if st.button('Add Zero Waste for All Ingredients'):
+                if name.strip():
+                    successes, errors = add_base_waste_entries_for_all_dishes(name)
+                    if errors == 0:
+                        st.success(f"All zero waste entries added successfully for {successes} ingredients.")
+                    else:
+                        st.error(f"Added {successes} zero waste entries with {errors} errors. Check logs for details.")
                 else:
-                    st.error(f"Added {successes} zero waste entries with {errors} errors. Check logs for details.")
-            else:
-                st.error("Please enter a name before adding zero waste entries.")
-
+                    st.error("Please enter a name before adding zero waste entries.")
+        with Padding:
+            st.markdown("  ")
+        with Waste_right:
+            # When a dish and ingredient are selected, calculate and display the average waste
+            if st.session_state.selected_dish_id and selected_ingredient:
+                average_waste = calculate_average_waste(st.session_state.selected_dish_id, selected_ingredient_id)
+                if average_waste is not None:
+                    
+                    #st.markdown(
+                        #f"The average waste for **{selected_ingredient}** is **{average_waste:.2f} grams.**", 
+                    # unsafe_allow_html=True)
+                    st.metric(label=f"Average waste of {selected_ingredient}", value=f"{average_waste:.2f} grams")
+                else:
+                    st.write("No waste data available for the selected dish and ingredient.")
 # Footer (Optional)
 st.markdown("---")
 st.markdown("© 2023 Restaurant Dashboard")
