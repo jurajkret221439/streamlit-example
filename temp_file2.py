@@ -231,7 +231,7 @@ elif st.session_state['submitted']:
 
             if selected_ingredient_id is not None:
         # Call the add_waste function and handle the response
-                response = add_waste(dish_id=selected_dish_id, ingredient_id=selected_ingredient_id, amount=amount, date=waste_date)
+                response = add_waste(dish_id=selected_dish_id, ingredient_id=selected_ingredient_id, amount=amount, date=waste_date, name)
                 if response.startswith("Error"):
                     st.error(response)
                 else:

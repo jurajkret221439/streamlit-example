@@ -69,6 +69,7 @@ class Waste(Base):
     waste_type = Column(String)
     date = Column(Date)
     entry_time = Column(Time)
+    name = Column(String)
 
     dish = relationship("Dish", back_populates="waste")
     ingredient = relationship("Ingredient", back_populates="waste")
@@ -116,7 +117,7 @@ def add_dish_ingredient(dish, ingredient, amount):
             print(f"Error adding dish ingredient for {dish.name} and {ingredient.name}: {e}")
 
 # Function to add waste with context manager for session
-def add_waste(dish_id, ingredient_id, amount, date):
+def add_waste(dish_id, ingredient_id, amount, date, name):
     with SessionLocal() as session:
         try:
             # Fetch the waste_type from the Ingredient model
@@ -134,7 +135,8 @@ def add_waste(dish_id, ingredient_id, amount, date):
                 amount=amount, 
                 waste_type=waste_type, 
                 date=date, 
-                entry_time=current_time
+                entry_time=current_time,
+                name=name
             )
             session.add(waste_data)
             session.commit()

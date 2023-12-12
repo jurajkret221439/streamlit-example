@@ -11,7 +11,7 @@ import os
 import pyodbc
 from dotenv import load_dotenv
 import logging
-
+from functions import get_dish_with_ingredients, get_dishes, get_ingredients_for_dish, add_waste, add_base_waste_entries_for_all_dishes
 
 logging.basicConfig(level=logging.INFO)
 
@@ -46,50 +46,7 @@ def init_connection():
 
 conn = init_connection()
 
-# Function to get dish and its ingredients
-def get_dish_with_ingredients(dish_name):
-    with SessionLocal() as session:
-        dish = session.query(Dish).filter_by(name=dish_name).first()
-        if dish is None:
-            return None, []  # Return None and an empty list if the dish is not found
 
-        dish_ingredients = session.query(DishIngredient, Ingredient).join(Ingredient).filter(DishIngredient.dish_id == dish.id).all()
-        ingredients = [{"name": ingredient.name, "amount": dish_ingredient.amount, "amount_type": ingredient.amount_type, "storage_type": ingredient.storage_type} for dish_ingredient, ingredient in dish_ingredients]
-        return dish, ingredients
-
-# Function to fetch dishes
-def get_dishes():
-    with SessionLocal() as session:
-        dishes = session.query(Dish).all()
-        return dishes
-
-# Function to fetch ingredients based on selected dish
-def get_ingredients_for_dish(dish_id):
-    with SessionLocal() as session:
-        dish_ingredients = session.query(DishIngredient).filter(DishIngredient.dish_id == dish_id).all()
-        ingredients = [session.query(Ingredient).get(di.ingredient_id) for di in dish_ingredients]
-        # No need to close the session explicitly when using 'with'
-        return ingredients
-
-# Function to add waste data to the database
-def add_waste(dish_id, ingredient_id, amount, date):
-    with SessionLocal() as session:
-        try:
-            dish = session.query(Dish).get(dish_id)
-            ingredient = session.query(Ingredient).get(ingredient_id)
-            if ingredient is None:
-                raise ValueError(f"No ingredient found with ID {ingredient_id}")
-            current_time = datetime.now().time()
-            waste_type = ingredient.waste_type
-
-            waste_data = Waste(dish_id=dish_id, dish_name=dish.name, ingredient_id=ingredient_id, ingredient_name=ingredient.name, amount=amount, waste_type=waste_type, date=date, entry_time=current_time)
-            session.add(waste_data)
-            session.commit()
-            return "Waste data submitted successfully."
-        except Exception as e:
-            logging.error(f"Error: {e}")
-            session.rollback()  # Rollback the changes on error
-            return f"Error adding waste data: {e}"
        
 
 # Initialize session state
@@ -209,6 +166,7 @@ elif st.session_state['submitted']:
 
     with Waste_tab:
         st.header("Waste")
+        name = st.text_input("Name", value="", placeholder="Enter name here")
         # Dropdown for dish selection
         dishes = get_dishes()
         dish_options = {d.name: d.id for d in dishes}
@@ -230,20 +188,33 @@ elif st.session_state['submitted']:
         waste_date = date.today()
 
         if st.button('Submit Waste Data'):
-            # Fetch the selected dish and ingredient IDs
-            selected_dish_id = dish_options[selected_dish_name]
-            selected_ingredient_id = next(i.id for i in ingredients if i.name == selected_ingredient)
+            if name.strip():
+                # Fetch the selected dish and ingredient IDs
+                selected_dish_id = dish_options[selected_dish_name]
+                selected_ingredient_id = next(i.id for i in ingredients if i.name == selected_ingredient)
 
-            if selected_ingredient_id is not None:
-        # Call the add_waste function and handle the response
-                response = add_waste(dish_id=selected_dish_id, ingredient_id=selected_ingredient_id, amount=amount, date=waste_date)
-                if response.startswith("Error"):
-                    st.error(response)
+                if selected_ingredient_id is not None:
+            # Call the add_waste function and handle the response
+                    response = add_waste(dish_id=selected_dish_id, ingredient_id=selected_ingredient_id, amount=amount, date=waste_date, name=name)
+                    if response.startswith("Error"):
+                        st.error(response)
+                    else:
+                        st.success(response)
                 else:
-                    st.success(response)
+                    st.error("Please select a valid ingredient.")
             else:
-                st.error("Please select a valid ingredient.")
-        
+                # If the name is empty, display an error message
+                st.error("Please enter a name before submitting waste data.") 
+            # Button to add zero waste for all ingredients of all dishes
+        if st.button('Add Zero Waste for All Ingredients'):
+            if name.strip():
+                successes, errors = add_base_waste_entries_for_all_dishes(name)
+                if errors == 0:
+                    st.success(f"All zero waste entries added successfully for {successes} ingredients.")
+                else:
+                    st.error(f"Added {successes} zero waste entries with {errors} errors. Check logs for details.")
+            else:
+                st.error("Please enter a name before adding zero waste entries.")
 
 # Footer (Optional)
 st.markdown("---")
